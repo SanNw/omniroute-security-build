@@ -12,6 +12,7 @@ export function preparePackage(input) {
     next: "16.3.8", dompurify: "3.4.17", "smol-toml": "1.9.1",
     sharp: "0.35.5", "@modelcontextprotocol/sdk": "1.32.1",
     jsdom: pkg.devDependencies.jsdom,
+    undici: "8.12.1",
   });
   Object.assign(pkg.overrides, {
     katex: "0.18.2", "fast-uri": "3.1.8", "fast-copy": "4.2.0",
