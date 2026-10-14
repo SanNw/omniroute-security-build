@@ -8,6 +8,7 @@ const audit = JSON.parse(result.stdout);
 assert(audit.metadata?.vulnerabilities, "Incomplete npm audit response");
 const allowed = new Set(["braces", "micromatch", "http-proxy-middleware"]);
 for (const item of Object.values(audit.vulnerabilities ?? {})) {
+  if (!allowed.has(item.name)) console.error(JSON.stringify(item, null, 2));
   assert(allowed.has(item.name), `Unreviewed vulnerability: ${item.name}`);
   for (const via of item.via.filter(v => typeof v === "object")) {
     assert.equal(via.url, "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm");
