@@ -1,0 +1,9 @@
+--- a/next.config.mjs
++++ b/next.config.mjs
+@@ -235,6 +235,7 @@
+   // more.
+   experimental: {
++    cpus: 2,
+     serverActions: {
+       bodySizeLimit: process.env.OMNIROUTE_SERVER_ACTIONS_BODY_LIMIT || "50mb",
+     },
