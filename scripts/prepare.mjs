@@ -7,9 +7,11 @@ export function preparePackage(input) {
   assert.equal(input.name, "omniroute");
   assert.equal(input.version, "3.8.51");
   const pkg = structuredClone(input);
+  assert(pkg.devDependencies.jsdom, "Missing upstream docs sanitizer dependency");
   Object.assign(pkg.dependencies, {
     next: "16.3.8", dompurify: "3.4.17", "smol-toml": "1.9.1",
     sharp: "0.35.5", "@modelcontextprotocol/sdk": "1.32.1",
+    jsdom: pkg.devDependencies.jsdom,
   });
   Object.assign(pkg.overrides, {
     katex: "0.18.2", "fast-uri": "3.1.8", "fast-copy": "4.2.0",
