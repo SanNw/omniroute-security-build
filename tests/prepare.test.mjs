@@ -14,6 +14,7 @@ test("pins fixes without mutating input or retaining unrelated dev tools", async
   assert.equal(result.overrides["monaco-editor"].dompurify, "3.4.17");
   assert.equal(result.overrides["proxy-addr"], "2.0.8");
   assert.equal(result.overrides.undici, "8.12.1");
+  assert.equal(result.dependencies.undici, result.overrides.undici);
   assert.equal(result.devDependencies.promptfoo, undefined);
   assert(result.devDependencies["fumadocs-mdx"]);
   assert.throws(() => preparePackage({ ...input, version: "unexpected" }));
