@@ -16,6 +16,7 @@ export function preparePackage(input) {
   Object.assign(pkg.overrides, {
     katex: "0.18.2", "fast-uri": "3.1.8", "fast-copy": "4.2.0",
     "proxy-addr": "2.0.8", "source-map-js": "1.2.2", sharp: "0.35.5",
+    undici: "8.12.1",
     "monaco-editor": { dompurify: "3.4.17" },
   });
   const tools = ["@tailwindcss/postcss", "babel-plugin-react-compiler", "fumadocs-mdx",
