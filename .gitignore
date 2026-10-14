@@ -1,0 +1,7 @@
+upstream/
+bundle/
+artifacts/
+upstream-package.fixture.json
+.env
+*.sqlite*
+*.log
