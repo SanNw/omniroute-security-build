@@ -1,0 +1,88 @@
+name: Build patched OmniRoute server
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: omniroute-security-build
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      NODE_OPTIONS: --max-old-space-size=10240
+      OMNIROUTE_USE_TURBOPACK: "0"
+      NEXT_TELEMETRY_DISABLED: "1"
+      DISABLE_SQLITE_AUTO_BACKUP: "true"
+    steps:
+      - name: Checkout recipe
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.21.0
+      - name: Checkout pinned upstream
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: diegosouzapw/OmniRoute
+          ref: c1e30b7676975feb298b49eff6ff58923c04b89e
+          path: upstream
+          persist-credentials: false
+      - name: Test and prepare security dependency pins
+        run: |
+          cp upstream/package.json upstream-package.fixture.json
+          node --test tests/prepare.test.mjs tests/bundle.test.mjs
+          node scripts/prepare.mjs upstream
+          patch -p1 -d upstream -i "$GITHUB_WORKSPACE/patches/build-workers.patch"
+      - name: Install dependencies without arbitrary lifecycle scripts
+        working-directory: upstream
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Rebuild required native dependencies in CI
+        working-directory: upstream
+        run: npm rebuild better-sqlite3 esbuild sharp
+      - name: Apply and verify the local braces backport
+        run: |
+          patch -p1 -d upstream/node_modules/braces -i "$GITHUB_WORKSPACE/patches/braces-depth.patch"
+          BRACES_ROOT="$GITHUB_WORKSPACE/upstream" node --test tests/braces-depth.test.cjs
+      - name: Audit production dependencies
+        working-directory: upstream
+        run: node ../scripts/audit.mjs ../audit.json
+      - name: Build full dashboard and server remotely
+        working-directory: upstream
+        env:
+          DATA_DIR: ${{ runner.temp }}/omniroute-build-data
+        run: |
+          ulimit -c 0
+          node scripts/build/build-next-isolated.mjs
+          test -f .build/next/standalone/server.js
+      - name: Package runtime sidecars
+        working-directory: upstream
+        run: node --import tsx scripts/build/prepublish.ts
+      - name: Assemble self-contained server artifact
+        run: |
+          node scripts/bundle.mjs upstream/dist bundle
+          cp upstream/package-lock.json bundle/SOURCE-PACKAGE-LOCK.json
+          cp upstream/LICENSE bundle/LICENSE-OMNIROUTE
+          cp audit.json bundle/AUDIT.json
+          cp patches/braces-depth.patch bundle/BRACES-LOCAL-PATCH.diff
+      - name: Run packaged-server smoke tests
+        run: node scripts/smoke.mjs bundle/server
+      - name: Archive and hash
+        run: |
+          mkdir artifacts
+          tar -czf artifacts/omniroute-3.8.51-patched-linux-x64.tar.gz -C bundle .
+          cd artifacts
+          sha256sum omniroute-3.8.51-patched-linux-x64.tar.gz > SHA256SUMS
+      - name: Upload validated runtime
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: omniroute-patched-linux-x64
+          path: artifacts/
+          retention-days: 14
+          compression-level: 0
+          if-no-files-found: error
