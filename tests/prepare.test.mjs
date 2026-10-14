@@ -9,6 +9,7 @@ test("pins fixes without mutating input or retaining unrelated dev tools", async
   const result = preparePackage(input);
   assert.deepEqual(input, before);
   assert.equal(result.dependencies.next, "16.3.8");
+  assert.equal(result.dependencies.jsdom, input.devDependencies.jsdom);
   assert.equal(result.dependencies.sharp, result.overrides.sharp);
   assert.equal(result.overrides["monaco-editor"].dompurify, "3.4.17");
   assert.equal(result.overrides["proxy-addr"], "2.0.8");
